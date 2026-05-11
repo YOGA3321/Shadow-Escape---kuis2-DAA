@@ -26,8 +26,9 @@ export function findShortestPath(mapData, start, target) {
     const rows = mapData.length;
     const cols = mapData[0].length;
 
-    // Jika target berada di dinding atau di luar batas, batalkan
-    if (target.y < 0 || target.y >= rows || target.x < 0 || target.x >= cols || mapData[target.y][target.x] === 1) {
+    // Jika target berada di dinding (1), ventilasi (2), atau di luar batas, batalkan
+    if (target.y < 0 || target.y >= rows || target.x < 0 || target.x >= cols || 
+        (mapData[target.y][target.x] !== 0 && mapData[target.y][target.x] !== 3)) {
         return []; 
     }
 
@@ -38,12 +39,15 @@ export function findShortestPath(mapData, start, target) {
     // Inisialisasi graf
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-            // Hanya daftarkan tile Floor (Bukan Dinding)
-            if (mapData[r][c] !== 1) {
-                const id = toId(c, r);
-                distances[id] = Infinity;
-                previous[id] = null;
-                unvisited.add(id);
+            if (r >= 0 && r < mapData.length && c >= 0 && c < mapData[0].length) {
+                // Guard bisa jalan di Floor (0) dan Light (3).
+                // Guard terhalang oleh Wall (1) dan Vent (2)
+                if (mapData[r][c] === 0 || mapData[r][c] === 3) {
+                    const id = toId(c, r);
+                    distances[id] = Infinity;
+                    previous[id] = null;
+                    unvisited.add(id);
+                }
             }
         }
     }

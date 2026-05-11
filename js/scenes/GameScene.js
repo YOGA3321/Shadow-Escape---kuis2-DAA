@@ -1,5 +1,6 @@
 import Player from '../entities/Player.js';
 import Guard from '../entities/Guard.js';
+import Camera from '../entities/Camera.js';
 import level1 from '../maps/level1.js';
 
 export default class GameScene extends Phaser.Scene {
@@ -14,14 +15,20 @@ export default class GameScene extends Phaser.Scene {
 
         this.mapData = level1;
 
-        // Draw walls based on mapData
-        for (let row = 0; row < this.mapData.length; row++) {
-            for (let col = 0; col < this.mapData[row].length; col++) {
-                if (this.mapData[row][col] === 1) {
-                    const px = (col * this.tileSize) + (this.tileSize / 2);
-                    const py = (row * this.tileSize) + (this.tileSize / 2);
-                    // Draw a grey box for wall
-                    this.add.rectangle(px, py, this.tileSize, this.tileSize, 0x777777);
+        // Draw grid map
+        for (let y = 0; y < this.mapData.length; y++) {
+            for (let x = 0; x < this.mapData[y].length; x++) {
+                const px = x * this.tileSize;
+                const py = y * this.tileSize;
+                
+                if (this.mapData[y][x] === 1) {
+                    this.add.rectangle(px + this.tileSize/2, py + this.tileSize/2, this.tileSize, this.tileSize, 0x555555);
+                } else if (this.mapData[y][x] === 2) {
+                    this.add.rectangle(px + this.tileSize/2, py + this.tileSize/2, this.tileSize, this.tileSize, 0x111111).setStrokeStyle(1, 0x333333); // Vent
+                } else if (this.mapData[y][x] === 3) {
+                    this.add.rectangle(px + this.tileSize/2, py + this.tileSize/2, this.tileSize, this.tileSize, 0x4d4d22).setStrokeStyle(1, 0x555533); // Light Area
+                } else {
+                    this.add.rectangle(px + this.tileSize/2, py + this.tileSize/2, this.tileSize, this.tileSize, 0x2d2d2d).setStrokeStyle(1, 0x444444);
                 }
             }
         }
@@ -37,6 +44,12 @@ export default class GameScene extends Phaser.Scene {
 
         // Create Guard (AI) instance at Grid X=18, Y=13
         this.guard = new Guard(this, 18, 13, this.tileSize, this.mapData);
+
+        // Create Cameras (CCTV)
+        this.camerasEntities = [
+            new Camera(this, 9, 3, {dx: 0, dy: 1}, this.tileSize, this.mapData), // Hadap Bawah
+            new Camera(this, 14, 11, {dx: -1, dy: 0}, this.tileSize, this.mapData) // Hadap Kiri
+        ];
 
         // Setup input keys
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -95,23 +108,26 @@ export default class GameScene extends Phaser.Scene {
 
         // Game Over Logic: Cek apakah Guard berada di kotak yang sama dengan Player
         if (this.player.gridX === this.guard.gridX && this.player.gridY === this.guard.gridY) {
-            this.isGameOver = true;
-            this.player.graphics.setFillStyle(0xff0000); // Player berdarah/mati
-            
-            // Pop-up UI Game Over
-            this.add.rectangle(400, 300, 800, 150, 0x000000, 0.8);
-            this.add.text(400, 300, 'TERTANGKAP!\nTekan R untuk Restart', { 
-                fontSize: '32px', 
-                fill: '#ff0000', 
-                fontStyle: 'bold',
-                align: 'center'
-            }).setOrigin(0.5);
-
-            // Listener tombol R untuk reset
-            this.input.keyboard.once('keydown-R', () => {
-                this.isGameOver = false;
-                this.scene.restart();
-            });
+            this.triggerGameOver('TERTANGKAP GUARD!');
         }
+    }
+
+    triggerGameOver(reason) {
+        if (this.isGameOver || this.isGameWon) return;
+        this.isGameOver = true;
+        this.player.graphics.setFillStyle(0xff0000); // Player mati
+        
+        this.add.rectangle(400, 300, 800, 150, 0x000000, 0.8);
+        this.add.text(400, 300, reason + '\nTekan R untuk Restart', { 
+            fontSize: '32px', 
+            fill: '#ff0000', 
+            fontStyle: 'bold',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        this.input.keyboard.once('keydown-R', () => {
+            this.isGameOver = false;
+            this.scene.restart();
+        });
     }
 }

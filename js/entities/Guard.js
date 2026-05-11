@@ -55,11 +55,16 @@ export default class Guard {
         const player = this.scene.player;
         if (!player) return;
 
+        const playerTile = this.mapData[player.gridY][player.gridX];
+        const isPlayerInVent = (playerTile === 2);
+        const isPlayerInLight = (playerTile === 3);
+        const currentVisionRadius = isPlayerInLight ? (this.visionRadius * 2) : this.visionRadius;
+
         // Kalkulasi jarak Euclidean ke player
         const distToPlayer = Math.sqrt(Math.pow(this.gridX - player.gridX, 2) + Math.pow(this.gridY - player.gridY, 2));
 
-        // Cek Pandangan: Apakah jarak dekat DAN tidak ada dinding yang menutupi garis pandang
-        const canSeePlayer = (distToPlayer <= this.visionRadius) && hasLineOfSight(this.gridX, this.gridY, player.gridX, player.gridY, this.mapData);
+        // Cek Pandangan: Player TIDAK di Vent, jarak masuk radius pandang, dan ada Line of Sight
+        const canSeePlayer = !isPlayerInVent && (distToPlayer <= currentVisionRadius) && hasLineOfSight(this.gridX, this.gridY, player.gridX, player.gridY, this.mapData);
 
         // Prioritas 1: Lihat player secara langsung
         if (canSeePlayer) {
@@ -125,9 +130,10 @@ export default class Guard {
                 const targetX = this.gridX + dir.dx;
                 const targetY = this.gridY + dir.dy;
                 
+                // Guard bisa jalan di atas Floor (0) dan Light (3), tetapi tidak di Wall (1) atau Vent (2)
                 if (targetY >= 0 && targetY < this.mapData.length && 
                     targetX >= 0 && targetX < this.mapData[0].length &&
-                    this.mapData[targetY][targetX] !== 1) {
+                    (this.mapData[targetY][targetX] === 0 || this.mapData[targetY][targetX] === 3)) {
                     validMoves.push(dir);
                 }
             }
