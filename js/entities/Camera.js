@@ -17,10 +17,8 @@ export default class Camera {
         
         this.visionLength = 4;
         this.visionCone = scene.add.graphics();
-        
-        // Cek update di setiap frame Phaser
-        this.scene.events.on('update', this.update, this);
     }
+
 
     update() {
         if (this.scene.isGameOver || this.scene.isGameWon) return;

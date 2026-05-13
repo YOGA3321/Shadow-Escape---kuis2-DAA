@@ -12,10 +12,28 @@
     <div id="game-wrapper">
         <div id="game-container"></div>
         <div id="ui-container">
-            <h3>Shadow Escape - Full Demo</h3>
-            <p><strong>WASD/Panah</strong>: Bergerak. | <strong>SPASI</strong>: Lempar Pemancing Suara (Decoy).<br>
-            Misi: Capai pintu keluar (kotak biru) tanpa tersentuh kotak merah (Guard).</p>
+            <h3>Shadow Escape - Level 1</h3>
+            <p><strong>WASD/Panah</strong>: Bergerak | <strong>SPASI</strong>: Lempar Decoy</p>
+            <div id="legend" style="font-size: 0.8em; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; text-align: left;">
+                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                    <div style="width: 12px; height: 12px; background: #111111; border: 1px solid #333; margin-right: 8px;"></div>
+                    <span><b>Vent (Hitam):</b> Sembunyi Aman</span>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                    <div style="width: 12px; height: 12px; background: #4d4d22; margin-right: 8px;"></div>
+                    <span><b>Lampu (Kuning):</b> Bahaya! Mudah Terlihat</span>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                    <div style="width: 12px; height: 12px; background: #ffffff; margin-right: 8px;"></div>
+                    <span><b>CCTV (Putih):</b> Hindari Sinar Merah</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 12px; height: 12px; background: #ffaa00; margin-right: 8px;"></div>
+                    <span><b>Penjaga (Oranye):</b> Kejar Jika Melihatmu</span>
+                </div>
+            </div>
         </div>
+
     </div>
     <script type="module" src="js/main.js"></script>
 </body>
