@@ -103,7 +103,7 @@ export default class GameScene extends Phaser.Scene {
             ];
             this.camerasEntities = [
                 new Camera(this, 5, 1, {dx: 1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 35, 11, {dx: 0, dy: 1}, this.tileSize, this.mapData), 
+                new Camera(this, 30, 11, {dx: 0, dy: 1}, this.tileSize, this.mapData), 
                 new Camera(this, 15, 19, {dx: -1, dy: 0}, this.tileSize, this.mapData), 
                 new Camera(this, 2, 28, {dx: 1, dy: 0}, this.tileSize, this.mapData)
             ];
@@ -163,15 +163,13 @@ export default class GameScene extends Phaser.Scene {
 
             this.camerasEntities = [
                 new Camera(this, 8, 27, {dx: 1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 70, 27, {dx: -1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 55, 33, {dx: 1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 55, 43, {dx: 1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 1, 3, {dx: 1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 78, 3, {dx: -1, dy: 0}, this.tileSize, this.mapData),
+                new Camera(this, 60, 27, {dx: -1, dy: 0}, this.tileSize, this.mapData),
+                new Camera(this, 45, 33, {dx: 1, dy: 0}, this.tileSize, this.mapData),
+                new Camera(this, 45, 43, {dx: 1, dy: 0}, this.tileSize, this.mapData),
+                new Camera(this, 68, 3, {dx: -1, dy: 0}, this.tileSize, this.mapData),
                 
                 // === PERBAIKAN CCTV NYANGKUT ===
                 // Digeser dari Y=18 (tembok) ke lorong (Y=17 dan Y=19)
-                new Camera(this, 1, 17, {dx: 1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 38, 17, {dx: -1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 40, 19, {dx: 1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 78, 19, {dx: -1, dy: 0}, this.tileSize, this.mapData),
@@ -196,9 +194,15 @@ export default class GameScene extends Phaser.Scene {
         this.coins = [];
         
         // HUD Koin di pojok layar
-        this.coinText = this.add.text(20, 20, 'Koin: 0', { 
-            fontSize: '24px', fill: '#ffd700', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 
+        this.coinText = this.add.text(20, 20, '🪙 KOIN: 0', { 
+            fontSize: '20px', 
+            fontFamily: 'Orbitron',
+            fill: '#ffd700', 
+            fontStyle: 'bold', 
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            padding: { x: 10, y: 5 }
         }).setScrollFactor(0).setDepth(200);
+
 
         // Spawn koin random (Makin tinggi level, makin banyak)
         const coinAmounts = [0, 5, 8, 12, 20];
@@ -239,7 +243,14 @@ export default class GameScene extends Phaser.Scene {
                 }
             }
         }
+
+        // Update Judul Level di UI
+        const titleEl = document.getElementById('level-title');
+        if (titleEl) {
+            titleEl.innerText = `Shadow Escape - Level ${this.currentLevel}`;
+        }
     }
+
     
 
     getDangerZones() {
@@ -276,7 +287,7 @@ export default class GameScene extends Phaser.Scene {
                 c.obj.destroy();
                 this.coins.splice(i, 1); 
                 this.coinCount++; 
-                this.coinText.setText('Koin: ' + this.coinCount);
+                this.coinText.setText('🪙 KOIN: ' + this.coinCount);
             }
         }
 
@@ -287,7 +298,7 @@ export default class GameScene extends Phaser.Scene {
             if (this.coinCount >= 5) {
                 // --- TIER 1: 5 Koin = FULL JALAN ---
                 this.coinCount -= 5;
-                this.coinText.setText('Koin: ' + this.coinCount); 
+                this.coinText.setText('🪙 KOIN: ' + this.coinCount); 
                 this.isHintActive = true;
                 
                 const dangerZones = this.getDangerZones();
@@ -315,7 +326,7 @@ export default class GameScene extends Phaser.Scene {
             } else if (this.coinCount >= 2) {
                 // --- TIER 2: 2 Koin = SETENGAH JALAN ---
                 this.coinCount -= 2;
-                this.coinText.setText('Koin: ' + this.coinCount); 
+                this.coinText.setText('🪙 KOIN: ' + this.coinCount); 
                 this.isHintActive = true;
                 
                 const dangerZones = this.getDangerZones();
