@@ -9,7 +9,7 @@ function hasLineOfSight(x0, y0, x1, y1, mapData) {
     let err = dx - dy;
 
     while (true) {
-        // Terhalang dinding = tidak bisa melihat
+        // Terhalang dinding (1) = tidak bisa melihat
         if (mapData[y0] !== undefined && mapData[y0][x0] === 1) return false;
         
         if (x0 === x1 && y0 === y1) break;
@@ -57,17 +57,41 @@ export default class Guard {
 
         const playerTile = this.mapData[player.gridY][player.gridX];
         const isPlayerInVent = (playerTile === 2);
-        const isPlayerInLight = (playerTile === 3);
-        const currentVisionRadius = isPlayerInLight ? (this.visionRadius * 2) : this.visionRadius;
+        const isPlayerInLight = (playerTile === 3); // ZONA KUNING / TERANG
+        const isPlayerInGrass = (playerTile === 5); // ZONA RUMPUT
 
-        // Kalkulasi jarak Euclidean ke player
+        // Kalkulasi jarak Euclidean ke player untuk Guard INI
         const distToPlayer = Math.sqrt(Math.pow(this.gridX - player.gridX, 2) + Math.pow(this.gridY - player.gridY, 2));
 
-        // Cek Pandangan: Player TIDAK di Vent, jarak masuk radius pandang, dan ada Line of Sight
-        const canSeePlayer = !isPlayerInVent && (distToPlayer <= currentVisionRadius) && hasLineOfSight(this.gridX, this.gridY, player.gridX, player.gridY, this.mapData);
+        // ==========================================
+        // LOGIKA BARU: SENSOR ZONA KUNING
+        // ==========================================
+        let isNearestGuardInLight = false;
+        
+        if (isPlayerInLight) {
+            let minDist = Infinity;
+            let nearestGuard = null;
+            
+            // Cek semua guard yang ada di map, cari yang paling dekat
+            for (const g of this.scene.guards) {
+                const d = Math.sqrt(Math.pow(g.gridX - player.gridX, 2) + Math.pow(g.gridY - player.gridY, 2));
+                if (d < minDist) {
+                    minDist = d;
+                    nearestGuard = g;
+                }
+            }
+            
+            // Jika Guard ini adalah guard terdekat, set statusnya!
+            if (nearestGuard === this) {
+                isNearestGuardInLight = true;
+            }
+        }
 
-        // Prioritas 1: Lihat player secara langsung
-        if (canSeePlayer) {
+        // Cek Pandangan Normal (Radius 6 & Tidak terhalang tembok)
+        const canSeePlayerNormal = !isPlayerInVent && !isPlayerInGrass && (distToPlayer <= this.visionRadius) && hasLineOfSight(this.gridX, this.gridY, player.gridX, player.gridY, this.mapData);
+
+        // Prioritas 1: Lihat player secara langsung ATAU Player kena sensor Zona Kuning & Guard ini yang paling dekat
+        if (canSeePlayerNormal || isNearestGuardInLight) {
             this.state = 'CHASE';
             this.graphics.setFillStyle(0xff0000); // Merah Terang = Peringatan/Mengejar
         } 
@@ -83,6 +107,9 @@ export default class Guard {
             this.pathLine.clear();
         }
 
+        // ==========================================
+        // AKSI BERDASARKAN STATE
+        // ==========================================
         if (this.state === 'CHASE') {
             const start = { x: this.gridX, y: this.gridY };
             const target = { x: player.gridX, y: player.gridY };
@@ -130,10 +157,10 @@ export default class Guard {
                 const targetX = this.gridX + dir.dx;
                 const targetY = this.gridY + dir.dy;
                 
-                // Guard bisa jalan di atas Floor (0) dan Light (3), tetapi tidak di Wall (1) atau Vent (2)
+                // Guard bisa jalan di atas Floor (0), Light (3), dan Rumput (5)
                 if (targetY >= 0 && targetY < this.mapData.length && 
                     targetX >= 0 && targetX < this.mapData[0].length &&
-                    (this.mapData[targetY][targetX] === 0 || this.mapData[targetY][targetX] === 3)) {
+                    (this.mapData[targetY][targetX] === 0 || this.mapData[targetY][targetX] === 3 || this.mapData[targetY][targetX] === 5)) {
                     validMoves.push(dir);
                 }
             }
@@ -144,8 +171,8 @@ export default class Guard {
                 let chosenDir = null;
 
                 if (canGoForward) {
-                    // Jika di persimpangan (pilihan jalan > 2), ada 25% kemungkinan dia iseng belok
-                    if (validMoves.length > 2 && Math.random() < 0.25) {
+                    // Jika di persimpangan (pilihan jalan > 2), ada 75% kemungkinan dia iseng belok
+                    if (validMoves.length > 2 && Math.random() < 0.75) {
                         const turns = validMoves.filter(d => !(d.dx === -this.patrolDir.dx && d.dy === -this.patrolDir.dy));
                         chosenDir = turns[Math.floor(Math.random() * turns.length)];
                     } else {
