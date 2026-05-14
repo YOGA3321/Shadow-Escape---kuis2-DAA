@@ -1,67 +1,57 @@
-# Shadow Escape
+# Shadow Escape: Advanced Stealth Game
 
-Shadow Escape adalah game *stealth* 2D berbasis web yang dibangun menggunakan Vanilla JavaScript dan framework **Phaser 3**. Proyek ini mendemonstrasikan implementasi **Algoritma Dijkstra** untuk sistem pencarian jalur (Pathfinding) dan algoritma **Bresenham's Line** untuk sistem penglihatan (Line of Sight) pada AI musuh.
+Shadow Escape is a high-stakes 2D web-based stealth game built using the **Phaser 3** framework. Players must navigate through complex mazes, avoid advanced AI guards and CCTV systems, and reach the exit point to progress through 5 increasingly difficult levels.
 
-## 🎮 Cara Bermain
+## 📁 Project Structure & File Paths
 
-**Misi:** Coba capai Pintu Keluar (**Kotak Biru**) tanpa tertangkap oleh Penjaga (**Kotak Merah/Oranye**) atau CCTV.
-
-**Kontrol:**
-- `W, A, S, D` atau `Panah Arah`: Bergerak (Sistem pergerakan *grid* 4-Arah).
-- `SPASI`: Melempar pemancing suara atau *Sound Decoy* (Lingkaran Kuning) untuk mengalihkan perhatian penjaga.
-
-## 🗺️ Lingkungan Map & Elemen Stealth
-
-Map dalam game memiliki berbagai rintangan *stealth* tingkat lanjut:
-- **(P) Player (Kotak Hijau):** Karakter Anda.
-- **(E) Exit (Kotak Biru):** Pintu keluar / objektif kemenangan.
-- **(C) Camera / CCTV (Kotak Putih):** Menembakkan sorot pandangan laser merah. Menyentuh laser ini membuat Anda langsung kalah.
-- **(V) Vent / Ventilasi (Kotak Abu-abu Gelap):** Titik aman (tempat sembunyi). Player tidak bisa dilihat oleh Kamera maupun Guard jika bersembunyi di atas sini. Guard juga dilarang melewati blok ini oleh algoritma Dijkstra.
-- **(L) Light Area (Kotak Kuning Pucat):** Zona berbahaya. Jika Anda menginjak blok ini, sensitivitas / jarak radius pandang Guard akan meningkat 2x lipat terhadap Anda.
-
-## 🧠 Perilaku AI (Guard)
-
-Guard memiliki sistem *State Machine* yang dinamis:
-1. **Patroli (Warna Oranye):** Berjalan menyusuri lorong map. AI menolak memutar balik kecuali berada di jalan buntu.
-2. **Curiga (Warna Kuning):** Jika Player melempar *Decoy*, Guard akan menghitung rute tercepat menggunakan Dijkstra menuju asal suara tersebut untuk melakukan investigasi.
-3. **Mengejar (Warna Merah):** Jika Player masuk ke dalam radius pandangan (6 blok) dan posisinya tidak terhalang tembok (dikalkulasi via *Bresenham Line*), Guard akan memburu Player secara *real-time*.
-
-## 🚀 Menjalankan Secara Lokal
-
-Proyek ini dibangun murni menggunakan *Native ES Modules* sehingga tidak memerlukan *bundler* atau proses *build* panjang (seperti NPM/Vite). Namun, Anda tetap membutuhkan *local web server* untuk menghindari pencekalan CORS di browser.
-
-1. *Clone* repositori ini:
-   ```bash
-   git clone git@github.com:YOGA3321/Shadow-Escape---kuis2-DAA.git
-   cd Shadow-Escape---kuis2-DAA
-   ```
-2. Jalankan server HTTP ringan bawaan Python:
-   ```bash
-   python3 -m http.server 3000
-   ```
-3. Buka browser pada alamat: `http://localhost:3000`
-
-## 🛠️ Teknologi & Algoritma Utama
-
-- **Game Engine:** Phaser 3 (File lokal tanpa ketergantungan koneksi CDN)
-- **Pathfinding:** `js/algorithms/dijkstra.js` (Graph Traversal murni yang mengizinkan jalur lantai & Light Area, tetapi memblokir Wall & Vent)
-- **Line of Sight:** `js/entities/Guard.js` & `js/entities/Camera.js` (Bresenham Raycasting)
-
-### Struktur Folder
 ```text
-├── index.html              # UI dan container game
-├── style.css               # Styling layout
+.
+├── index.html              # Main entry point and Sidebar UI
+├── style.css               # Styling for the UI and game container
+├── README.md               # Technical documentation
 └── js/
-    ├── main.js             # Konfigurasi Phaser
-    ├── phaser.min.js       # File engine Phaser
-    ├── scenes/
-    │   └── GameScene.js    # Siklus update game, status Menang/Kalah, & render map
-    ├── entities/
-    │   ├── Player.js       # Input player & collision frame/dinding
-    │   ├── Guard.js        # AI State Machine & Logic pandangan
-    │   └── Camera.js       # Raycast Vision untuk sistem deteksi area
+    ├── main.js             # Phaser configuration and scene launcher
+    ├── phaser.min.js       # Phaser 3 Game Engine library
     ├── algorithms/
-    │   └── dijkstra.js     # Algoritma penentuan jarak terpendek
-    └── maps/
-        └── level1.js       # Peta Array 2D
+    │   └── dijkstra.js     # Shortest path algorithm for AI and hints
+    ├── entities/
+    │   ├── Player.js       # Player mechanics and input handling
+    │   ├── Guard.js        # Advanced AI Guard logic and FOV
+    │   └── Camera.js       # CCTV Camera sweep and detection logic
+    ├── maps/
+    │   ├── level1.js       # Level 1 layout (Intro)
+    │   ├── level2.js       # Level 2 layout (Medium)
+    │   ├── level3.js       # Level 3 layout (Complex)
+    │   ├── level4.js       # Level 4 layout (Hard)
+    │   └── level5.js       # Level 5 (The Mega Cube - DFS Generated)
+    └── scenes/
+        └── GameScene.js    # Main game scene and logic orchestration
 ```
+
+## 🎮 Core Gameplay Mechanics
+
+- **Stealth Navigation**: Move silently through the shadows. Use Vents (2) to hide from guards and Grass (5) to reduce your visibility.
+- **AI Guard System**: Guards use the **Dijkstra Algorithm** for pathfinding. They have three states:
+    - **PATROL**: Moving between random points or fixed paths (Orange).
+    - **SUSPICIOUS**: Investigating a noise (Decoy) or a sighting (Yellow).
+    - **CHASE**: Pursuing the player with high speed once detected (Red).
+- **CCTV Systems**: Stationary white cameras with rotating laser sweeps. Crossing a laser triggers an immediate Game Over.
+- **Light & Dark Areas**: Visibility is dynamic. Standing under Light sources (Yellow Tiles) makes you easier to spot.
+- **Decoy System**: Press **Spacebar** to throw a decoy that distracts nearby guards.
+- **Hint System**: Collect coins to unlock path hints. 
+    - 2 Coins = Half-path hint.
+    - 5 Coins = Full path to exit.
+- **Pause System**: Press **'P'** to freeze all entities, tweens, and game logic.
+
+## 🛠️ Technical Implementation
+
+### Algorithms
+1. **Dijkstra's Algorithm (`js/algorithms/dijkstra.js`)**: Used for calculating the most efficient path for Guards and the Player's hint line. It handles grid weights to avoid walls.
+2. **DFS Recursive Backtracking (`js/maps/level5.js`)**: Generates a 81x81 "Perfect Maze" dynamically. It ensures that every part of the maze is reachable from the start (79,79) to the finish (1,1).
+3. **Bresenham's Line Algorithm**: Implemented within `Guard.js` to handle Line-of-Sight (LoS) checks, ensuring guards cannot see through walls.
+
+### OOP (Object Oriented Programming)
+Each entity (Player, Guard, Camera) is a self-contained class, allowing for modular updates and high scalability. The `GameScene.js` acts as the Controller, managing the interaction between these objects.
+
+---
+*Developed for Design and Analysis of Algorithms (DAA) Course Project.*
