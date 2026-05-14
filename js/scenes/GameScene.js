@@ -154,10 +154,15 @@ export default class GameScene extends Phaser.Scene {
                 new Camera(this, 55, 43, {dx: 1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 1, 3, {dx: 1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 78, 3, {dx: -1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 1, 18, {dx: 1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 38, 18, {dx: -1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 40, 18, {dx: 1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 78, 18, {dx: -1, dy: 0}, this.tileSize, this.mapData),
+                
+                // === PERBAIKAN CCTV NYANGKUT ===
+                // Digeser dari Y=18 (tembok) ke lorong (Y=17 dan Y=19)
+                new Camera(this, 1, 17, {dx: 1, dy: 0}, this.tileSize, this.mapData),
+                new Camera(this, 38, 17, {dx: -1, dy: 0}, this.tileSize, this.mapData),
+                new Camera(this, 40, 19, {dx: 1, dy: 0}, this.tileSize, this.mapData),
+                new Camera(this, 78, 19, {dx: -1, dy: 0}, this.tileSize, this.mapData),
+                // ===============================
+
                 new Camera(this, 1, 36, {dx: 1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 38, 43, {dx: -1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 78, 33, {dx: -1, dy: 0}, this.tileSize, this.mapData),
@@ -184,7 +189,6 @@ export default class GameScene extends Phaser.Scene {
         // Spawn koin random (Makin tinggi level, makin banyak)
         const coinAmounts = [0, 5, 8, 12, 20];
         this.spawnRandomCoins(coinAmounts[this.currentLevel]);
-
 
         // Setup input keys
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -276,14 +280,12 @@ export default class GameScene extends Phaser.Scene {
                 this.coinText.setText('Koin: ' + this.coinCount); 
                 this.isHintActive = true;
                 
-                // Cari jalan full dulu pakai Dijkstra
                 const fullPath = findShortestPath(this.mapData, 
                     { x: this.player.gridX, y: this.player.gridY }, 
                     { x: this.exitPoint.gridX, y: this.exitPoint.gridY },
                     true 
                 );
 
-                // Potong array jadi SETENGAH saja
                 const halfPathLength = Math.ceil(fullPath.length / 2);
                 const halfPath = fullPath.slice(0, halfPathLength);
 
@@ -291,7 +293,6 @@ export default class GameScene extends Phaser.Scene {
                 halfPath.forEach(node => {
                     const px = (node.x * this.tileSize) + (this.tileSize / 2);
                     const py = (node.y * this.tileSize) + (this.tileSize / 2);
-                    // Warnanya aku bikin sedikit beda (hijau kekuningan) biar pemain sadar ini cuma setengah
                     const dot = this.add.circle(px, py, this.tileSize * 0.2, 0xadff2f).setAlpha(0.8).setDepth(100); 
                     hintGraphics.push(dot);
                 });
@@ -313,18 +314,36 @@ export default class GameScene extends Phaser.Scene {
             }
         }
 
-        // Skill: Deploy Sound Decoy
+        // ==========================================
+        // FITUR DECOY (DILARANG MELEMPAR DI DALAM VENT)
+        // ==========================================
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey) && !this.activeDecoy) {
-            this.activeDecoy = { gridX: this.player.gridX, gridY: this.player.gridY };
-            const px = (this.activeDecoy.gridX * this.tileSize) + (this.tileSize / 2);
-            const py = (this.activeDecoy.gridY * this.tileSize) + (this.tileSize / 2);
             
-            const decoyGraphic = this.add.circle(px, py, 10, 0xffff00);
+            const playerTile = this.mapData[this.player.gridY][this.player.gridX];
             
-            this.time.delayedCall(5000, () => {
-                decoyGraphic.destroy();
-                this.activeDecoy = null;
-            });
+            // Cek apakah player sedang ada di dalam Vent (Kode 2)
+            if (playerTile === 2) {
+                // Jika di Vent, batalin Decoy dan kasih Peringatan Merah!
+                const px = (this.player.gridX * this.tileSize) + (this.tileSize / 2);
+                const py = (this.player.gridY * this.tileSize) - (this.tileSize);
+                const warning = this.add.text(px, py, 'Tidak bisa decoy di Vent!', { 
+                    fill: '#ff0000', fontSize: '14px', fontStyle: 'bold', stroke: '#fff', strokeThickness: 2 
+                }).setOrigin(0.5).setDepth(200);
+                
+                this.time.delayedCall(1000, () => warning.destroy());
+            } else {
+                // Jika tidak di Vent, Decoy normal
+                this.activeDecoy = { gridX: this.player.gridX, gridY: this.player.gridY };
+                const px = (this.activeDecoy.gridX * this.tileSize) + (this.tileSize / 2);
+                const py = (this.activeDecoy.gridY * this.tileSize) + (this.tileSize / 2);
+                
+                const decoyGraphic = this.add.circle(px, py, 10, 0xffff00);
+                
+                this.time.delayedCall(5000, () => {
+                    decoyGraphic.destroy();
+                    this.activeDecoy = null;
+                });
+            }
         }
 
         // Win Logic
