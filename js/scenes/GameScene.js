@@ -15,7 +15,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     init(data) {
-        this.currentLevel = data.level || 4;
+        this.currentLevel = data.level || 1;
     }
 
     create() {
@@ -109,24 +109,38 @@ export default class GameScene extends Phaser.Scene {
             ];
             this.exitPoint = { gridX: 38, gridY: 28 }; 
         } else if (this.currentLevel === 3) {
-            this.guards = [
-                new Guard(this, 10, 5, this.tileSize, this.mapData),
-                new Guard(this, 50, 5, this.tileSize, this.mapData),
-                new Guard(this, 10, 35, this.tileSize, this.mapData),
-                new Guard(this, 50, 35, this.tileSize, this.mapData),
-                new Guard(this, 30, 19, this.tileSize, this.mapData),
-                new Guard(this, 5, 25, this.tileSize, this.mapData)
-            ];
+            // --- LEVEL 3: THE HEDGE MAZE ---
+            this.exitPoint = { gridX: 58, gridY: 43 };
+
+            // Cari lokasi lantai yang valid untuk penempatan guard secara acak
+            const validTiles = [];
+            for (let y = 1; y < this.mapData.length - 1; y++) {
+                for (let x = 1; x < this.mapData[y].length - 1; x++) {
+                    if ((this.mapData[y][x] === 0 || this.mapData[y][x] === 3) && (x > 8 || y > 8)) {
+                        validTiles.push({x, y});
+                    }
+                }
+            }
+
+            // Ambil 8 titik acak untuk guard
+            this.guards = [];
+            for (let i = 0; i < 8; i++) {
+                const spot = Phaser.Utils.Array.RemoveRandomElement(validTiles);
+                if (spot) {
+                    this.guards.push(new Guard(this, spot.x, spot.y, this.tileSize, this.mapData));
+                }
+            }
+
             this.camerasEntities = [
-                new Camera(this, 1, 5, {dx: 1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 58, 5, {dx: -1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 1, 9, {dx: 1, dy: 0}, this.tileSize, this.mapData),
-                new Camera(this, 58, 9, {dx: -1, dy: 0}, this.tileSize, this.mapData),
+                new Camera(this, 1, 10, {dx: 1, dy: 0}, this.tileSize, this.mapData),
+                new Camera(this, 58, 10, {dx: -1, dy: 0}, this.tileSize, this.mapData),
+                new Camera(this, 1, 30, {dx: 1, dy: 0}, this.tileSize, this.mapData),
+                new Camera(this, 58, 30, {dx: -1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 30, 1, {dx: 0, dy: 1}, this.tileSize, this.mapData),
-                new Camera(this, 30, 27, {dx: 0, dy: -1}, this.tileSize, this.mapData)
+                new Camera(this, 30, 43, {dx: 0, dy: -1}, this.tileSize, this.mapData)
             ];
-            this.exitPoint = { gridX: 58, gridY: 37 }; 
         } else {
+
             this.guards = [
                 new Guard(this, 5, 3, this.tileSize, this.mapData),
                 new Guard(this, 25, 3, this.tileSize, this.mapData),
@@ -226,6 +240,28 @@ export default class GameScene extends Phaser.Scene {
             }
         }
     }
+    
+
+    getDangerZones() {
+        const dangerZones = new Set();
+        if (!this.camerasEntities) return dangerZones;
+        
+        this.camerasEntities.forEach(cam => {
+            let cx = cam.gridX;
+            let cy = cam.gridY;
+            let dist = 0;
+            while (dist < cam.visionLength) {
+                cx += cam.direction.dx;
+                cy += cam.direction.dy;
+                // Jika kena dinding (1), berhenti
+                if (this.mapData[cy] && this.mapData[cy][cx] === 1) break;
+                
+                dangerZones.add(`${cx},${cy}`);
+                dist++;
+            }
+        });
+        return dangerZones;
+    }
 
     update(time, delta) {
         if (this.isGameOver || this.isGameWon) return;
@@ -244,7 +280,6 @@ export default class GameScene extends Phaser.Scene {
             }
         }
 
-        // ==========================================
         // FITUR HINT (LOGIKA 5 KOIN & 2 KOIN)
         // ==========================================
         if (Phaser.Input.Keyboard.JustDown(this.hintKey) && !this.isHintActive) {
@@ -255,11 +290,14 @@ export default class GameScene extends Phaser.Scene {
                 this.coinText.setText('Koin: ' + this.coinCount); 
                 this.isHintActive = true;
                 
+                const dangerZones = this.getDangerZones();
                 const path = findShortestPath(this.mapData, 
                     { x: this.player.gridX, y: this.player.gridY }, 
                     { x: this.exitPoint.gridX, y: this.exitPoint.gridY },
-                    true 
+                    true,
+                    dangerZones
                 );
+
 
                 const hintGraphics = []; 
                 path.forEach(node => {
@@ -280,11 +318,14 @@ export default class GameScene extends Phaser.Scene {
                 this.coinText.setText('Koin: ' + this.coinCount); 
                 this.isHintActive = true;
                 
+                const dangerZones = this.getDangerZones();
                 const fullPath = findShortestPath(this.mapData, 
                     { x: this.player.gridX, y: this.player.gridY }, 
                     { x: this.exitPoint.gridX, y: this.exitPoint.gridY },
-                    true 
+                    true,
+                    dangerZones
                 );
+
 
                 const halfPathLength = Math.ceil(fullPath.length / 2);
                 const halfPath = fullPath.slice(0, halfPathLength);

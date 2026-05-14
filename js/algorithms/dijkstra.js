@@ -20,9 +20,11 @@ function fromId(id) {
  * @param {Object} start Posisi awal {x, y} dalam Grid
  * @param {Object} target Posisi tujuan {x, y} dalam Grid
  * @param {Boolean} allowVent Apakah boleh melewati ventilasi (kode 2)? (Default: false)
+ * @param {Set} dangerZones Kumpulan ID string koordinat yang dipantau CCTV
  * @returns {Array} Jalur Array berisi object {x, y} yang harus dilalui
  */
-export function findShortestPath(mapData, start, target, allowVent = false) {
+export function findShortestPath(mapData, start, target, allowVent = false, dangerZones = new Set()) {
+
     const rows = mapData.length;
     const cols = mapData[0].length;
 
@@ -96,10 +98,23 @@ export function findShortestPath(mapData, start, target, allowVent = false) {
             
             // Validasi: Apakah n bukan dinding (ada di dalam set unvisited)
             if (unvisited.has(nId)) {
-                // Cost default lantai/rumput = 1 
+                // Bobot Biaya Default
                 let cost = 1;
                 
+                const tile = mapData[n.y][n.x];
+
+                // Area Terang (3) lebih berisiko, beri penalti biaya
+                if (tile === 3) {
+                    cost = 10;
+                }
+
+                // Jika di bawah CCTV (Danger Zone), beri penalti biaya sangat tinggi
+                if (dangerZones.has(nId)) {
+                    cost = 100;
+                }
+                
                 const altDistance = distances[currentId] + cost;
+
                 
                 if (altDistance < distances[nId]) {
                     distances[nId] = altDistance;
