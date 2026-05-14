@@ -7,6 +7,8 @@ import level1 from '../maps/level1.js';
 import level2 from '../maps/level2.js';
 import level3 from '../maps/level3.js';
 import level4 from '../maps/level4.js';
+import level5 from '../maps/level5.js';
+
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -15,8 +17,10 @@ export default class GameScene extends Phaser.Scene {
     }
 
     init(data) {
+        // Kita set default ke 5 agar Anda bisa langsung masuk ke Misi Final
         this.currentLevel = data.level || 1;
     }
+
 
     create() {
         // Pilih data map berdasarkan level
@@ -29,10 +33,15 @@ export default class GameScene extends Phaser.Scene {
         } else if (this.currentLevel === 3) {
             this.mapData = level3;
             this.tileSize = 24;
-        } else {
+        } else if (this.currentLevel === 4) {
             this.mapData = level4;
-            this.tileSize = 18; // 80x50 map, tile terkecil
+            this.tileSize = 18; 
+        } else if (this.currentLevel === 5) {
+            this.mapData = level5;
+            this.tileSize = 18; // Diperbesar agar memenuhi layar (81x18 = 1458px)
         }
+
+
 
         // Update UI Text
         const uiTitle = document.querySelector('#ui-container h3');
@@ -77,7 +86,17 @@ export default class GameScene extends Phaser.Scene {
             }
         }
 
-        this.player = new Player(this, 1, 1, this.tileSize, this.mapData);
+        // Tentukan posisi awal berdasarkan level
+        let startX = 1;
+        let startY = 1;
+        if (this.currentLevel === 5) {
+            startX = 79;
+            startY = 79;
+        }
+
+
+        this.player = new Player(this, startX, startY, this.tileSize, this.mapData);
+
 
         this.cameras.main.setBounds(0, 0, mapWidthInPixels, mapHeightInPixels);
         this.cameras.main.startFollow(this.player.graphics, true, 0.1, 0.1);
@@ -139,8 +158,7 @@ export default class GameScene extends Phaser.Scene {
                 new Camera(this, 30, 1, {dx: 0, dy: 1}, this.tileSize, this.mapData),
                 new Camera(this, 30, 43, {dx: 0, dy: -1}, this.tileSize, this.mapData)
             ];
-        } else {
-
+        } else if (this.currentLevel === 4) {
             this.guards = [
                 new Guard(this, 5, 3, this.tileSize, this.mapData),
                 new Guard(this, 25, 3, this.tileSize, this.mapData),
@@ -167,21 +185,52 @@ export default class GameScene extends Phaser.Scene {
                 new Camera(this, 45, 33, {dx: 1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 45, 43, {dx: 1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 68, 3, {dx: -1, dy: 0}, this.tileSize, this.mapData),
-                
-                // === PERBAIKAN CCTV NYANGKUT ===
-                // Digeser dari Y=18 (tembok) ke lorong (Y=17 dan Y=19)
                 new Camera(this, 38, 17, {dx: -1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 40, 19, {dx: 1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 78, 19, {dx: -1, dy: 0}, this.tileSize, this.mapData),
-                // ===============================
-
                 new Camera(this, 1, 36, {dx: 1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 38, 43, {dx: -1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 78, 33, {dx: -1, dy: 0}, this.tileSize, this.mapData),
                 new Camera(this, 78, 43, {dx: -1, dy: 0}, this.tileSize, this.mapData)
             ];
             this.exitPoint = { gridX: 77, gridY: 48 };
+        } else if (this.currentLevel === 5) {
+            // --- LEVEL 5: THE MEGA CUBE (Square Dense Maze) ---
+            // Pemain mulai dari pojok kanan bawah (79,79)
+            // Goal ada di pojok kiri atas (1,1)
+            this.exitPoint = { gridX: 1, gridY: 1 };
+
+            // Spawn 20 Elit Guards secara acak di lorong-lorong
+            const validTiles = [];
+            for (let y = 1; y < this.mapData.length - 1; y++) {
+                for (let x = 1; x < this.mapData[y].length - 1; x++) {
+                    if (this.mapData[y][x] === 0 && (x < 70 || y < 70)) {
+                        validTiles.push({ x, y });
+                    }
+                }
+            }
+            this.guards = [];
+            for (let i = 0; i < 20; i++) {
+                const spot = Phaser.Utils.Array.RemoveRandomElement(validTiles);
+                if (spot) {
+                    const g = new Guard(this, spot.x, spot.y, this.tileSize, this.mapData);
+                    g.moveSpeed = 100; // Agak lambat karena lorong sempit
+                    g.visionRadius = 10; 
+                    this.guards.push(g);
+                }
+            }
+
+            this.camerasEntities = [
+                new Camera(this, 10, 10, { dx: 1, dy: 0 }, this.tileSize, this.mapData),
+                new Camera(this, 70, 70, { dx: -1, dy: 0 }, this.tileSize, this.mapData),
+                new Camera(this, 10, 70, { dx: 0, dy: -1 }, this.tileSize, this.mapData),
+                new Camera(this, 70, 10, { dx: 0, dy: 1 }, this.tileSize, this.mapData),
+                new Camera(this, 40, 40, { dx: 1, dy: 1 }, this.tileSize, this.mapData),
+                new Camera(this, 40, 40, { dx: -1, dy: -1 }, this.tileSize, this.mapData)
+            ];
         }
+
+
 
         const exitPx = (this.exitPoint.gridX * this.tileSize) + (this.tileSize / 2);
         const exitPy = (this.exitPoint.gridY * this.tileSize) + (this.tileSize / 2);
@@ -193,20 +242,17 @@ export default class GameScene extends Phaser.Scene {
         this.coinCount = 0;
         this.coins = [];
         
-        // HUD Koin di pojok layar
-        this.coinText = this.add.text(20, 20, '🪙 KOIN: 0', { 
-            fontSize: '20px', 
-            fontFamily: 'Orbitron',
-            fill: '#ffd700', 
-            fontStyle: 'bold', 
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            padding: { x: 10, y: 5 }
-        }).setScrollFactor(0).setDepth(200);
+        // Sinkronisasi Koin ke Sidebar HTML
+        const coinValEl = document.getElementById('coin-val');
+        if (coinValEl) coinValEl.innerText = this.coinCount;
 
 
-        // Spawn koin random (Makin tinggi level, makin banyak)
-        const coinAmounts = [0, 5, 8, 12, 20];
-        this.spawnRandomCoins(coinAmounts[this.currentLevel]);
+
+        // Spawn koin random (Level 5 butuh banyak koin untuk Hint!)
+        const coinAmounts = [0, 5, 8, 12, 30]; // Index 4 = Lvl 4, Index 5 (otomatis dari .length)
+        const amount = this.currentLevel === 5 ? 30 : coinAmounts[this.currentLevel];
+        this.spawnRandomCoins(amount);
+
 
         // Setup input keys
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -218,7 +264,12 @@ export default class GameScene extends Phaser.Scene {
         this.isGameWon = false;
         this.activeDecoy = null;
         this.isHintActive = false; 
+        this.isPaused = false; // Flag Pause
+
+        // Input Tombol P untuk Pause
+        this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
     }
+
 
     spawnRandomCoins(amount) {
         let spawned = 0;
@@ -228,9 +279,11 @@ export default class GameScene extends Phaser.Scene {
             let tile = this.mapData[ry][rx];
             
             // Koin muncul di Lantai(0), Lampu(3), atau Rumput(5)
+            // Hindari spawn di posisi Player atau di Exit Point
             if ((tile === 0 || tile === 3 || tile === 5) && 
-                !(rx === 1 && ry === 1) && 
+                !(rx === this.player.gridX && ry === this.player.gridY) && 
                 !(rx === this.exitPoint.gridX && ry === this.exitPoint.gridY)) {
+
                 
                 let isOccupied = this.coins.some(c => c.gridX === rx && c.gridY === ry);
                 if (!isOccupied) {
@@ -275,9 +328,15 @@ export default class GameScene extends Phaser.Scene {
     }
 
     update(time, delta) {
-        if (this.isGameOver || this.isGameWon) return;
+        // Logika Toggle Pause
+        if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
+            this.togglePause();
+        }
+
+        if (this.isGameOver || this.isGameWon || this.isPaused) return;
 
         this.player.update(this.cursors, this.keys);
+
         this.camerasEntities.forEach(cam => cam.update());
 
         // Logika Ambil Koin
@@ -287,7 +346,9 @@ export default class GameScene extends Phaser.Scene {
                 c.obj.destroy();
                 this.coins.splice(i, 1); 
                 this.coinCount++; 
-                this.coinText.setText('🪙 KOIN: ' + this.coinCount);
+                const coinValEl = document.getElementById('coin-val');
+                if (coinValEl) coinValEl.innerText = this.coinCount;
+
             }
         }
 
@@ -298,7 +359,8 @@ export default class GameScene extends Phaser.Scene {
             if (this.coinCount >= 5) {
                 // --- TIER 1: 5 Koin = FULL JALAN ---
                 this.coinCount -= 5;
-                this.coinText.setText('🪙 KOIN: ' + this.coinCount); 
+                const coinValEl = document.getElementById('coin-val');
+                if (coinValEl) coinValEl.innerText = this.coinCount;
                 this.isHintActive = true;
                 
                 const dangerZones = this.getDangerZones();
@@ -326,7 +388,8 @@ export default class GameScene extends Phaser.Scene {
             } else if (this.coinCount >= 2) {
                 // --- TIER 2: 2 Koin = SETENGAH JALAN ---
                 this.coinCount -= 2;
-                this.coinText.setText('🪙 KOIN: ' + this.coinCount); 
+                const coinValEl = document.getElementById('coin-val');
+                if (coinValEl) coinValEl.innerText = this.coinCount;
                 this.isHintActive = true;
                 
                 const dangerZones = this.getDangerZones();
@@ -420,16 +483,22 @@ export default class GameScene extends Phaser.Scene {
                     this.scene.restart({ level: 3 });
                 });
             } else if (this.currentLevel === 3) {
-                winText = 'LEVEL 3 SELESAI!\nTekan N untuk Level TERAKHIR!';
+                winText = 'LEVEL 3 SELESAI!\nTekan N untuk Lanjut ke Level 4';
                 this.input.keyboard.once('keydown-N', () => {
                     this.scene.restart({ level: 4 });
                 });
+            } else if (this.currentLevel === 4) {
+                winText = 'LEVEL 4 SELESAI!\nTekan N untuk MISI FINAL!';
+                this.input.keyboard.once('keydown-N', () => {
+                    this.scene.restart({ level: 5 });
+                });
             } else {
-                winText = 'SEMUA MISI SELESAI!\nKamu Adalah MASTER STEALTH.\nTekan R untuk Main Lagi';
+                winText = 'SEMUA MISI SELESAI!\nKAMU ADALAH MASTER STEALTH SEJATI.\nNexus Sphere Telah Dikuasai!\nTekan R untuk Main Lagi';
                 this.input.keyboard.once('keydown-R', () => {
                     this.scene.restart({ level: 1 });
                 });
             }
+
 
             this.add.text(centerX, centerY, winText, { 
                 fontSize: '28px', 
@@ -476,4 +545,44 @@ export default class GameScene extends Phaser.Scene {
             this.scene.restart({ level: this.currentLevel });
         });
     }
+
+    togglePause() {
+        if (this.isGameOver || this.isGameWon) return;
+
+        this.isPaused = !this.isPaused;
+
+        if (this.isPaused) {
+            // BEKUKAN seluruh sistem game
+            this.tweens.pauseAll();
+            this.time.paused = true;
+
+            // Tampilkan Overlay Pause
+            const centerX = this.cameras.main.worldView.centerX;
+            const centerY = this.cameras.main.worldView.centerY;
+
+            this.pauseOverlay = this.add.container(0, 0).setDepth(1000).setScrollFactor(0);
+            
+            const bg = this.add.rectangle(centerX, centerY, 800, 200, 0x000000, 0.7).setOrigin(0.5);
+            const text = this.add.text(centerX, centerY, 'GAME PAUSED\nTekan P untuk Lanjut', { 
+                fontSize: '32px', 
+                fontFamily: 'Orbitron',
+                fill: '#00ffcc', 
+                fontStyle: 'bold',
+                align: 'center'
+            }).setOrigin(0.5);
+            
+            this.pauseOverlay.add([bg, text]);
+        } else {
+            // LANJUTKAN kembali sistem game
+            this.tweens.resumeAll();
+            this.time.paused = false;
+
+            // Hapus Overlay Pause
+            if (this.pauseOverlay) {
+                this.pauseOverlay.destroy();
+            }
+        }
+    }
+
 }
+

@@ -50,7 +50,7 @@ export default class Guard {
     }
 
     think() {
-        if (this.isMoving || this.scene.isGameOver || this.scene.isGameWon) return;
+        if (this.isMoving || this.scene.isGameOver || this.scene.isGameWon || this.scene.isPaused) return;
 
         const player = this.scene.player;
         if (!player) return;
