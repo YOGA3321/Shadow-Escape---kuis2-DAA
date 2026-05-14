@@ -6,7 +6,7 @@ import level2 from '../maps/level2.js';
 import level3 from '../maps/level3.js';
 import level4 from '../maps/level4.js';
 
-
+0
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
