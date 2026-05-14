@@ -16,20 +16,24 @@ function fromId(id) {
 /**
  * Algoritma Dijkstra murni untuk Grid 4-Arah
  * Mencari rute terpendek dengan menghindari dinding.
- * 
- * @param {Array} mapData Array 2D grid map
+ * * @param {Array} mapData Array 2D grid map
  * @param {Object} start Posisi awal {x, y} dalam Grid
  * @param {Object} target Posisi tujuan {x, y} dalam Grid
+ * @param {Boolean} allowVent Apakah boleh melewati ventilasi (kode 2)? (Default: false)
  * @returns {Array} Jalur Array berisi object {x, y} yang harus dilalui
  */
-export function findShortestPath(mapData, start, target) {
+export function findShortestPath(mapData, start, target, allowVent = false) {
     const rows = mapData.length;
     const cols = mapData[0].length;
 
     // Jika target berada di dinding (1), ventilasi (2), atau di luar batas, batalkan
-    if (target.y < 0 || target.y >= rows || target.x < 0 || target.x >= cols || 
-        (mapData[target.y][target.x] !== 0 && mapData[target.y][target.x] !== 3)) {
+    if (target.y < 0 || target.y >= rows || target.x < 0 || target.x >= cols) {
         return []; 
+    }
+    
+    const targetTile = mapData[target.y][target.x];
+    if (targetTile === 1 || (!allowVent && targetTile === 2)) {
+        return [];
     }
 
     const unvisited = new Set();
@@ -40,9 +44,11 @@ export function findShortestPath(mapData, start, target) {
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             if (r >= 0 && r < mapData.length && c >= 0 && c < mapData[0].length) {
-                // Guard bisa jalan di Floor (0) dan Light (3).
-                // Guard terhalang oleh Wall (1) dan Vent (2)
-                if (mapData[r][c] === 0 || mapData[r][c] === 3) {
+                const tile = mapData[r][c];
+                
+                // Guard bisa jalan di Floor (0), Light (3), dan TALL GRASS (5).
+                // Fitur Hint bisa jalan tembus Vent (2) jika allowVent = true
+                if (tile === 0 || tile === 3 || tile === 5 || (allowVent && tile === 2)) {
                     const id = toId(c, r);
                     distances[id] = Infinity;
                     previous[id] = null;
@@ -53,6 +59,8 @@ export function findShortestPath(mapData, start, target) {
     }
 
     const startId = toId(start.x, start.y);
+    if (distances[startId] === undefined) return [];
+
     distances[startId] = 0;
 
     while (unvisited.size > 0) {
@@ -88,7 +96,7 @@ export function findShortestPath(mapData, start, target) {
             
             // Validasi: Apakah n bukan dinding (ada di dalam set unvisited)
             if (unvisited.has(nId)) {
-                // Cost default lantai = 1 (Bisa diperluas nantinya untuk Smoke/Light)
+                // Cost default lantai/rumput = 1 
                 let cost = 1;
                 
                 const altDistance = distances[currentId] + cost;
